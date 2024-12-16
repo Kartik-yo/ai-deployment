@@ -1,22 +1,16 @@
-FROM python:3.9-slim
+FROM python:3.8-slim
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
+# Set work directory
 WORKDIR /app
 
-# Copy files
-COPY requirements.txt .
+# Copy application files
+COPY . /app
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
 # Expose the application port
-EXPOSE 5000
+EXPOSE 5001
 
-# Run the application
-CMD ["python", "app.py"]
-
+# Command to run the FastAPI app
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5001"]
