@@ -6,17 +6,21 @@ app = Flask(__name__)
 
 # Load the GPT4ALL model
 MODEL_NAME = "gpt4all/gpt4all-model"
-MODEL_PATH = "./model/model.bin"
+MODEL_PATH = "./model"
 
-if not os.path.exists(MODEL_PATH):
-    os.makedirs(MODEL_PATH)
+tokenizer = None
+model = None
 
 try:
+    # Ensure model directory exists
+    os.makedirs(MODEL_PATH, exist_ok=True)
+    
+    # Load tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=MODEL_PATH)
     model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, cache_dir=MODEL_PATH)
-    print("Model loaded successfully.")
+    print("Model and tokenizer loaded successfully.")
 except Exception as e:
-    print(f"Error loading model: {e}")
+    print(f"Error loading model or tokenizer: {e}")
 
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -24,6 +28,9 @@ def generate():
     Generate a response to a prompt using GPT4ALL.
     Expects JSON input: { "prompt": "Your prompt here" }
     """
+    if tokenizer is None or model is None:
+        return jsonify({"error": "Model or tokenizer not loaded"}), 500
+
     try:
         data = request.json
         prompt = data.get("prompt", "")
@@ -42,5 +49,4 @@ def generate():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-
+    app.run(host="0.0.0.0", port=5001)
