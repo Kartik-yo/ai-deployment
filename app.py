@@ -1,57 +1,28 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import os
+from starlette.templating import Jinja2Templates
+import google.generativeai as genai
 
-# Initialize FastAPI app and templates
+# Initialize FastAPI app
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# Model details
-MODEL_NAME = "./model"
-tokenizer = None
-model = None
-
-# Load model and tokenizer
-def load_model():
-    global tokenizer, model
-    try:
-        os.makedirs(MODEL_NAME, exist_ok=True)
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-        model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-        print("Model loaded successfully.")
-    except Exception as e:
-        print(f"Error loading model: {e}")
-
-load_model()
+# Set up Gemini API Key
+genai.configure(api_key="AIzaSyD-aKmuacuhSyrkAAZBWrGPO0J3iZ47UiQ")
 
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    """Render the front-end form."""
-    return templates.TemplateResponse("index.html", {"request": request})
+async def get_form(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "response": ""})
 
 @app.post("/generate", response_class=HTMLResponse)
 async def generate_response(request: Request, prompt: str = Form(...)):
-    """Generate response for a given prompt."""
-    if not tokenizer or not model:
-        return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "error": "Model not loaded. Please check the backend."},
-        )
-
     try:
-        # Tokenize input and generate response
-        inputs = tokenizer(prompt, return_tensors="pt")
-        outputs = model.generate(inputs["input_ids"], max_length=200, num_return_sequences=1)
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        # Render response
-        return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "prompt": prompt, "response": response},
-        )
+        # Call Gemini API
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        result = response.text  # Extract the response text
+        return templates.TemplateResponse("index.html", {"request": request, "response": result})
     except Exception as e:
         return templates.TemplateResponse(
-            "index.html", {"request": request, "error": str(e)}
+            "index.html", {"request": request, "response": f"Error: {str(e)}"}
         )
