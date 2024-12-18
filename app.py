@@ -8,7 +8,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # Set up Gemini API Key
-genai.configure(api_key="AIzaSyD-aKmuacuhSyrkAAZBWrGPO0J3iZ47UiQ")
+genai.configure(api_key="YOUR_API_KEY")
 
 @app.get("/", response_class=HTMLResponse)
 async def get_form(request: Request):
